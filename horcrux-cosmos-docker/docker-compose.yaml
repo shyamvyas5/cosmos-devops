@@ -29,10 +29,11 @@ services:
           mantleNode --home /root/node1/.mantleNode add-genesis-account test 10000000000000000000000stake --keyring-backend test
           mantleNode --home /root/node1/.mantleNode gentx test 1000000000stake --keyring-backend test --chain-id $$CHAIN_ID
           mantleNode --home /root/node1/.mantleNode collect-gentxs
-          mantleNode --home /root/node1/.mantleNode start \
-          --rpc.laddr=tcp://0.0.0.0:26657 &
-          sleep 99999
         fi
+        mantleNode --home /root/node1/.mantleNode start \
+        --rpc.laddr=tcp://0.0.0.0:26657 &
+        # putting sleep for debugging purpose
+        sleep 999999
 
   node2:
     image: asguardnetwork/spacefolders:assetmantle-0.3.1
@@ -63,10 +64,11 @@ services:
           # sed -i "s/rpc_servers =.*/rpc_servers = "'"node1:26657,node1:26657"'"/g" /root/node2/.mantleNode/config/config.toml
           # cat /root/node2/.mantleNode/config/config.toml | grep rpc_servers
           cp /root/node1/.mantleNode/config/genesis.json /root/node2/.mantleNode/config/genesis.json
-          mantleNode --home /root/node2/.mantleNode start \
-          --rpc.laddr=tcp://0.0.0.0:26657 &
-          sleep 999999
         fi
+        mantleNode --home /root/node2/.mantleNode start \
+        --rpc.laddr=tcp://0.0.0.0:26657 &
+        # putting sleep for debugging purpose
+        sleep 999999
 
   node3:
     image: asguardnetwork/spacefolders:assetmantle-0.3.1
@@ -97,10 +99,11 @@ services:
           # sed -i "s/rpc_servers =.*/rpc_servers = "'"node1:26657,node1:26657"'"/g" /root/node3/.mantleNode/config/config.toml
           # cat /root/node3/.mantleNode/config/config.toml | grep rpc_servers
           cp /root/node1/.mantleNode/config/genesis.json /root/node3/.mantleNode/config/genesis.json
-          mantleNode --home /root/node3/.mantleNode start \
-          --rpc.laddr=tcp://0.0.0.0:26657 &
-          sleep 99999
         fi
+        mantleNode --home /root/node3/.mantleNode start \
+        --rpc.laddr=tcp://0.0.0.0:26657 &
+        # putting sleep for debugging purpose
+        sleep 999999
 
   signer-init:
     image: ghcr.io/strangelove-ventures/horcrux:main
@@ -168,7 +171,7 @@ services:
           # sed -i '/^priv_validator_state_file =.*/ s/./#&/' /root/node2/.mantleNode/config/config.toml
           # sed -i '/^priv_validator_state_file =.*/ s/./#&/' /root/node3/.mantleNode/config/config.toml
         else
-          sleep infinity
+          echo "config.yaml file already exists at /root/.horcrux so skipping"
         fi
 
   signer1:
@@ -187,7 +190,7 @@ services:
         then
           horcrux start
         else
-          sleep infinity
+          echo "no config.yaml file found at /root/.horcrux"
         fi
 
   signer2:
@@ -206,7 +209,7 @@ services:
         then
           horcrux start
         else
-          sleep infinity
+          echo "no config.yaml file found at /root/.horcrux"
         fi
 
   signer3:
@@ -225,7 +228,7 @@ services:
         then
           horcrux start
         else
-          sleep infinity
+          echo "no config.yaml file found at /root/.horcrux"
         fi
 
 volumes:
