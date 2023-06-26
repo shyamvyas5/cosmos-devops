@@ -1,0 +1,241 @@
+---
+version: "3"
+services:
+  node1:
+    image: asguardnetwork/spacefolders:assetmantle-0.3.1
+    container_name: node1
+    environment:
+      - CHAIN_ID=load-test-1
+    ports:
+      - 26657
+    volumes:
+      - chain-data1:/root/node1/.mantleNode
+      - chain-data2:/root/node2/.mantleNode
+      - chain-data3:/root/node3/.mantleNode
+    networks:
+      - cosmos
+    entrypoint: sh
+    command:
+      - -cex
+      - |
+        if [[ -f /root/node1/.mantleNode/config/genesis.json ]];
+        then
+          mantleNode --home /root/node1/.mantleNode start \
+          --rpc.laddr=tcp://0.0.0.0:26657 &
+          sleep 99999
+        else
+          mantleNode --home /root/node1/.mantleNode init test --chain-id $$CHAIN_ID
+          mantleNode --home /root/node1/.mantleNode keys add test --keyring-backend test
+          mantleNode --home /root/node1/.mantleNode add-genesis-account test 10000000000000000000000stake --keyring-backend test
+          mantleNode --home /root/node1/.mantleNode gentx test 1000000000stake --keyring-backend test --chain-id $$CHAIN_ID
+          mantleNode --home /root/node1/.mantleNode collect-gentxs
+          mantleNode --home /root/node1/.mantleNode start \
+          --rpc.laddr=tcp://0.0.0.0:26657 &
+          sleep 99999
+        fi
+
+  node2:
+    image: asguardnetwork/spacefolders:assetmantle-0.3.1
+    container_name: node2
+    environment:
+      - CHAIN_ID=load-test-1
+    volumes:
+      - chain-data1:/root/node1/.mantleNode
+      - chain-data2:/root/node2/.mantleNode
+      - chain-data3:/root/node3/.mantleNode
+    networks:
+      - cosmos
+    entrypoint: sh
+    command:
+      - -cex
+      - |
+        if [[ -f /root/node2/.mantleNode/config/genesis.json ]];
+        then
+          mantleNode --home /root/node2/.mantleNode start \
+          --rpc.laddr=tcp://0.0.0.0:26657 &
+          sleep 99999
+        else
+          mantleNode --home /root/node2/.mantleNode init test2 --chain-id $$CHAIN_ID
+          mantleNode --home /root/node2/.mantleNode keys add test2 --keyring-backend test
+          sleep 10
+          sed -i 's/persistent_peers =.*/persistent_peers = "'$$(mantleNode --home /root/node1/.mantleNode tendermint show-node-id)@node1:26656,$$(mantleNode --home /root/node3/.mantleNode tendermint show-node-id)@node3:26656'"/g' /root/node2/.mantleNode/config/config.toml
+          cat /root/node2/.mantleNode/config/config.toml | grep persistent_peers
+          # sed -i "s/rpc_servers =.*/rpc_servers = "'"node1:26657,node1:26657"'"/g" /root/node2/.mantleNode/config/config.toml
+          # cat /root/node2/.mantleNode/config/config.toml | grep rpc_servers
+          cp /root/node1/.mantleNode/config/genesis.json /root/node2/.mantleNode/config/genesis.json
+          mantleNode --home /root/node2/.mantleNode start \
+          --rpc.laddr=tcp://0.0.0.0:26657 &
+          sleep 999999
+        fi
+
+  node3:
+    image: asguardnetwork/spacefolders:assetmantle-0.3.1
+    container_name: node3
+    environment:
+      - CHAIN_ID=load-test-1
+    volumes:
+      - chain-data1:/root/node1/.mantleNode
+      - chain-data2:/root/node2/.mantleNode
+      - chain-data3:/root/node3/.mantleNode
+    networks:
+      - cosmos
+    entrypoint: sh
+    command:
+      - -cex
+      - |
+        if [[ -f /root/node3/.mantleNode/config/genesis.json ]];
+        then
+          mantleNode --home /root/node3/.mantleNode start \
+          --rpc.laddr=tcp://0.0.0.0:26657 &
+          sleep 99999
+        else
+          mantleNode --home /root/node3/.mantleNode init test3 --chain-id $$CHAIN_ID
+          mantleNode --home /root/node3/.mantleNode keys add test3 --keyring-backend test
+          sleep 10
+          sed -i 's/persistent_peers =.*/persistent_peers = "'$$(mantleNode --home /root/node1/.mantleNode tendermint show-node-id)@node1:26656,$$(mantleNode --home /root/node2/.mantleNode tendermint show-node-id)@node2:26656'"/g' /root/node3/.mantleNode/config/config.toml
+          cat /root/node3/.mantleNode/config/config.toml | grep persistent_peers
+          # sed -i "s/rpc_servers =.*/rpc_servers = "'"node1:26657,node1:26657"'"/g" /root/node3/.mantleNode/config/config.toml
+          # cat /root/node3/.mantleNode/config/config.toml | grep rpc_servers
+          cp /root/node1/.mantleNode/config/genesis.json /root/node3/.mantleNode/config/genesis.json
+          mantleNode --home /root/node3/.mantleNode start \
+          --rpc.laddr=tcp://0.0.0.0:26657 &
+          sleep 99999
+        fi
+
+  signer-init:
+    image: ghcr.io/strangelove-ventures/horcrux:main
+    container_name: signer-init
+    networks:
+      - cosmos
+    environment:
+      - HORCRUX_HOME=/root/.horcrux_init
+      - CHAIN_ID=load-test-1
+    volumes:
+      - chain-data1:/root/node1/.mantleNode
+      - chain-data2:/root/node2/.mantleNode
+      - chain-data3:/root/node3/.mantleNode
+      - signer-init:/root/.horcrux_init
+      - signer-data1:/root/signer1
+      - signer-data2:/root/signer2
+      - signer-data3:/root/signer3
+    entrypoint: sh
+    command:
+      - -cex
+      - |
+        if [[ ! -e $$HORCRUX_HOME/config.yaml ]];
+        then
+          sleep 10
+          # Create initial config
+          horcrux --home $$HORCRUX_HOME config init --node "tcp://node1:26660" --node "tcp://node2:26660" --node "tcp://node3:26660" --cosigner "tcp://signer1:2222" --cosigner "tcp://signer2:2222" --cosigner "tcp://signer3:2222" --threshold 2 --grpc-timeout 1000ms --raft-timeout 1000ms
+
+          # Create rsa keys json
+          horcrux --home $$HORCRUX_HOME create-rsa-shards --shards 3
+
+          # Create the shards of the validator priv key
+          horcrux --home $$HORCRUX_HOME create-ed25519-shards --chain-id $$CHAIN_ID --key-file /root/node1/.mantleNode/config/priv_validator_key.json --threshold 2 --shards 3
+
+          # Remove signature and signbytes and create new json
+          sed "/\b\(signature\|signbytes\)\b/d" /root/node1/.mantleNode/data/priv_validator_state.json > $$HORCRUX_HOME/state/$$CHAIN_ID_priv_validator_state.json
+
+          # Add double quotes around the value of "round", i.e. "round": 0 to "round": "0"
+          sed -i 's/"round": 0/"round": "0"/g' $$HORCRUX_HOME/state/$$CHAIN_ID_priv_validator_state.json
+
+          # Remove comma
+          sed -i '4 s/,//g' $$HORCRUX_HOME/state/$$CHAIN_ID_priv_validator_state.json
+
+          # Copy config and state
+          cp -r $$HORCRUX_HOME/* /root/signer1
+          cp -r $$HORCRUX_HOME/* /root/signer2
+          cp -r $$HORCRUX_HOME/* /root/signer3
+
+          # Copy shard json and rsa keys json to node1 volume
+          cp /root/cosigner_1/* /root/signer1
+
+          # Copy shard json and rsa keys json to node2 volume
+          cp /root/cosigner_2/* /root/signer2
+
+          # Copy shard json and rsa keys json to node3 volume
+          cp /root/cosigner_3/* /root/signer3
+
+          # Update the validation address to a new port on node1, node2 and node3
+          sed -i 's%priv_validator_laddr =.*%priv_validator_laddr = "tcp://0.0.0.0:26660"%g' /root/node1/.mantleNode/config/config.toml
+          sed -i 's%priv_validator_laddr =.*%priv_validator_laddr = "tcp://0.0.0.0:26660"%g' /root/node2/.mantleNode/config/config.toml
+          sed -i 's%priv_validator_laddr =.*%priv_validator_laddr = "tcp://0.0.0.0:26660"%g' /root/node3/.mantleNode/config/config.toml
+
+          # sed -i '/^priv_validator_key_file =.*/ s/./#&/' /root/node2/.mantleNode/config/config.toml
+          # sed -i '/^priv_validator_key_file =.*/ s/./#&/' /root/node3/.mantleNode/config/config.toml
+
+          # sed -i '/^priv_validator_state_file =.*/ s/./#&/' /root/node2/.mantleNode/config/config.toml
+          # sed -i '/^priv_validator_state_file =.*/ s/./#&/' /root/node3/.mantleNode/config/config.toml
+        else
+          sleep infinity
+        fi
+
+  signer1:
+    image: ghcr.io/strangelove-ventures/horcrux:main
+    container_name: signer1
+    networks:
+      - cosmos
+    volumes:
+      - signer-data1:/root/.horcrux
+    entrypoint: sh
+    command:
+      - -cex
+      - |
+        sleep 150
+        if [[ -f /root/.horcrux/config.yaml ]];
+        then
+          horcrux start
+        else
+          sleep infinity
+        fi
+
+  signer2:
+    image: ghcr.io/strangelove-ventures/horcrux:main
+    container_name: signer2
+    networks:
+      - cosmos
+    volumes:
+      - signer-data2:/root/.horcrux
+    entrypoint: sh
+    command:
+      - -cex
+      - |
+        sleep 150
+        if [[ -f /root/.horcrux/config.yaml ]];
+        then
+          horcrux start
+        else
+          sleep infinity
+        fi
+
+  signer3:
+    image: ghcr.io/strangelove-ventures/horcrux:main
+    container_name: signer3
+    networks:
+      - cosmos
+    volumes:
+      - signer-data3:/root/.horcrux
+    entrypoint: sh
+    command:
+      - -cex
+      - |
+        sleep 150
+        if [[ -f /root/.horcrux/config.yaml ]];
+        then
+          horcrux start
+        else
+          sleep infinity
+        fi
+
+volumes:
+  chain-data1:
+  chain-data2:
+  chain-data3:
+  signer-init:
+  signer-data1:
+  signer-data2:
+  signer-data3:
+
+networks:
+  cosmos:
