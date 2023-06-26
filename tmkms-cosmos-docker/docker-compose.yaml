@@ -34,10 +34,11 @@ services:
           sed -i '/^priv_validator_key_file =.*/ s/./#&/' /root/node1/.mantleNode/config/config.toml
           sed -i '/^priv_validator_state_file =.*/ s/./#&/' /root/node1/.mantleNode/config/config.toml
           sleep 30
-          mantleNode --home /root/node1/.mantleNode start \
-          --rpc.laddr=tcp://0.0.0.0:26657 &
-          sleep 99999
         fi
+        mantleNode --home /root/node1/.mantleNode start \
+        --rpc.laddr=tcp://0.0.0.0:26657 &
+        # putting sleep for debugging purpose
+        sleep 99999
 
   node2:
     image: asguardnetwork/spacefolders:assetmantle-0.3.1
@@ -70,10 +71,11 @@ services:
           # cat /root/node2/.mantleNode/config/config.toml | grep rpc_servers
           cp /root/node1/.mantleNode/config/genesis.json /root/node2/.mantleNode/config/genesis.json
           sleep 30
-          mantleNode --home /root/node2/.mantleNode start \
-          --rpc.laddr=tcp://0.0.0.0:26657 &
-          sleep 999999
         fi
+        mantleNode --home /root/node2/.mantleNode start \
+        --rpc.laddr=tcp://0.0.0.0:26657 &
+        # putting sleep for debugging purpose
+        sleep 99999
 
   node3:
     image: asguardnetwork/spacefolders:assetmantle-0.3.1
@@ -106,10 +108,11 @@ services:
           # cat /root/node3/.mantleNode/config/config.toml | grep rpc_servers
           cp /root/node1/.mantleNode/config/genesis.json /root/node3/.mantleNode/config/genesis.json
           sleep 30
-          mantleNode --home /root/node3/.mantleNode start \
-          --rpc.laddr=tcp://0.0.0.0:26657 &
-          sleep 99999
         fi
+        mantleNode --home /root/node3/.mantleNode start \
+        --rpc.laddr=tcp://0.0.0.0:26657 &
+        # putting sleep for debugging purpose
+        sleep 99999
 
   signer1:
     image: shyamsv/tmkms:0.12.2-alpine-3.18.2
