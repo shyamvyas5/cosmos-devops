@@ -59,10 +59,12 @@ services:
           mantleNode --home /root/node2/.mantleNode init test2 --chain-id $$CHAIN_ID
           mantleNode --home /root/node2/.mantleNode keys add test2 --keyring-backend test
           sleep 10
+          # adding persistent peers
           sed -i 's/persistent_peers =.*/persistent_peers = "'$$(mantleNode --home /root/node1/.mantleNode tendermint show-node-id)@node1:26656,$$(mantleNode --home /root/node3/.mantleNode tendermint show-node-id)@node3:26656'"/g' /root/node2/.mantleNode/config/config.toml
           cat /root/node2/.mantleNode/config/config.toml | grep persistent_peers
           # sed -i "s/rpc_servers =.*/rpc_servers = "'"node1:26657,node1:26657"'"/g" /root/node2/.mantleNode/config/config.toml
           # cat /root/node2/.mantleNode/config/config.toml | grep rpc_servers
+          # copying genesis.json file from node1 to node2
           cp /root/node1/.mantleNode/config/genesis.json /root/node2/.mantleNode/config/genesis.json
         fi
         mantleNode --home /root/node2/.mantleNode start \
@@ -94,10 +96,12 @@ services:
           mantleNode --home /root/node3/.mantleNode init test3 --chain-id $$CHAIN_ID
           mantleNode --home /root/node3/.mantleNode keys add test3 --keyring-backend test
           sleep 10
+          # adding persistent peers
           sed -i 's/persistent_peers =.*/persistent_peers = "'$$(mantleNode --home /root/node1/.mantleNode tendermint show-node-id)@node1:26656,$$(mantleNode --home /root/node2/.mantleNode tendermint show-node-id)@node2:26656'"/g' /root/node3/.mantleNode/config/config.toml
           cat /root/node3/.mantleNode/config/config.toml | grep persistent_peers
           # sed -i "s/rpc_servers =.*/rpc_servers = "'"node1:26657,node1:26657"'"/g" /root/node3/.mantleNode/config/config.toml
           # cat /root/node3/.mantleNode/config/config.toml | grep rpc_servers
+          # copying genesis.json file from node1 to node3
           cp /root/node1/.mantleNode/config/genesis.json /root/node3/.mantleNode/config/genesis.json
         fi
         mantleNode --home /root/node3/.mantleNode start \
@@ -146,7 +150,7 @@ services:
           # Remove comma
           sed -i '4 s/,//g' $$HORCRUX_HOME/state/$$CHAIN_ID_priv_validator_state.json
 
-          # Copy config and state
+          # Copy config and state to other signers
           cp -r $$HORCRUX_HOME/* /root/signer1
           cp -r $$HORCRUX_HOME/* /root/signer2
           cp -r $$HORCRUX_HOME/* /root/signer3
