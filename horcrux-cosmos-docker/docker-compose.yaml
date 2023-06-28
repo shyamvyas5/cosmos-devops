@@ -20,6 +20,7 @@ services:
       - -cex
       - |
         if [[ ! -f $$NODE_HOME/config/genesis.json ]];
+        then
           mantleNode --home $$NODE_HOME init test --chain-id $$CHAIN_ID
           mantleNode --home $$NODE_HOME keys add test --keyring-backend test
           mantleNode --home $$NODE_HOME add-genesis-account test 10000000000000000000000stake --keyring-backend test
@@ -36,7 +37,7 @@ services:
     container_name: node2
     environment:
       - CHAIN_ID=load-test-1
-      - NODE_HOME=/root/node1/.mantleNode
+      - NODE_HOME=/root/node2/.mantleNode
     volumes: *node-volumes
     networks:
       - horcrux-cosmos
@@ -45,6 +46,7 @@ services:
       - -cex
       - |
         if [[ ! -f $$NODE_HOME/config/genesis.json ]];
+        then
           mantleNode --home $$NODE_HOME init test2 --chain-id $$CHAIN_ID
           mantleNode --home $$NODE_HOME keys add test2 --keyring-backend test
           sleep 10
@@ -75,6 +77,7 @@ services:
       - -cex
       - |
         if [[ ! -f $$NODE_HOME/config/genesis.json ]];
+        then
           mantleNode --home $$NODE_HOME init test3 --chain-id $$CHAIN_ID
           mantleNode --home $$NODE_HOME keys add test3 --keyring-backend test
           sleep 10
@@ -111,7 +114,7 @@ services:
     command:
       - -cex
       - |
-        if [[ ! -e $$HORCRUX_HOME/config.yaml ]];
+        if [[ ! -f $$HORCRUX_HOME/config.yaml ]];
         then
           sleep 10
           # Create initial config
@@ -174,6 +177,7 @@ services:
       - |
         sleep 150
         if [[ ! -f /root/.horcrux/config.yaml ]];
+        then
           echo "no config.yaml file found at /root/.horcrux"
           exit 1
         fi
@@ -193,6 +197,7 @@ services:
       - |
         sleep 150
         if [[ ! -f /root/.horcrux/config.yaml ]];
+        then
           echo "no config.yaml file found at /root/.horcrux"
           exit 1
         fi
@@ -212,6 +217,7 @@ services:
       - |
         sleep 150
         if [[ ! -f /root/.horcrux/config.yaml ]];
+        then
           echo "no config.yaml file found at /root/.horcrux"
           exit 1
         fi
@@ -227,4 +233,4 @@ volumes:
   signer-data3:
 
 networks:
-  cosmos:horcrux-cosmos
+  horcrux-cosmos:
