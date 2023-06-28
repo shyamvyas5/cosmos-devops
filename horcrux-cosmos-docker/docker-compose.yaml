@@ -2,118 +2,103 @@
 version: "3"
 services:
   node1:
-    image: asguardnetwork/spacefolders:assetmantle-0.3.1
+    image: &node-image asguardnetwork/spacefolders:assetmantle-0.3.1
     container_name: node1
     environment:
       - CHAIN_ID=load-test-1
+      - NODE_HOME=/root/node1/.mantleNode
     ports:
       - 26657
-    volumes:
+    volumes: &node-volumes
       - chain-data1:/root/node1/.mantleNode
       - chain-data2:/root/node2/.mantleNode
       - chain-data3:/root/node3/.mantleNode
     networks:
-      - cosmos
+      - horcrux-cosmos
     entrypoint: sh
     command:
       - -cex
       - |
-        if [[ -f /root/node1/.mantleNode/config/genesis.json ]];
+        if [[ ! -f $$NODE_HOME/config/genesis.json ]];
         then
-          mantleNode --home /root/node1/.mantleNode start \
-          --rpc.laddr=tcp://0.0.0.0:26657 &
-          sleep 99999
-        else
-          mantleNode --home /root/node1/.mantleNode init test --chain-id $$CHAIN_ID
-          mantleNode --home /root/node1/.mantleNode keys add test --keyring-backend test
-          mantleNode --home /root/node1/.mantleNode add-genesis-account test 10000000000000000000000stake --keyring-backend test
-          mantleNode --home /root/node1/.mantleNode gentx test 1000000000stake --keyring-backend test --chain-id $$CHAIN_ID
-          mantleNode --home /root/node1/.mantleNode collect-gentxs
+          mantleNode --home $$NODE_HOME init test --chain-id $$CHAIN_ID
+          mantleNode --home $$NODE_HOME keys add test --keyring-backend test
+          mantleNode --home $$NODE_HOME add-genesis-account test 10000000000000000000000stake --keyring-backend test
+          mantleNode --home $$NODE_HOME gentx test 1000000000stake --keyring-backend test --chain-id $$CHAIN_ID
+          mantleNode --home $$NODE_HOME collect-gentxs
         fi
-        mantleNode --home /root/node1/.mantleNode start \
+        mantleNode --home $$NODE_HOME start \
         --rpc.laddr=tcp://0.0.0.0:26657 &
         # putting sleep for debugging purpose
         sleep 999999
 
   node2:
-    image: asguardnetwork/spacefolders:assetmantle-0.3.1
+    image: *node-image
     container_name: node2
     environment:
       - CHAIN_ID=load-test-1
-    volumes:
-      - chain-data1:/root/node1/.mantleNode
-      - chain-data2:/root/node2/.mantleNode
-      - chain-data3:/root/node3/.mantleNode
+      - NODE_HOME=/root/node2/.mantleNode
+    volumes: *node-volumes
     networks:
-      - cosmos
+      - horcrux-cosmos
     entrypoint: sh
     command:
       - -cex
       - |
-        if [[ -f /root/node2/.mantleNode/config/genesis.json ]];
+        if [[ ! -f $$NODE_HOME/config/genesis.json ]];
         then
-          mantleNode --home /root/node2/.mantleNode start \
-          --rpc.laddr=tcp://0.0.0.0:26657 &
-          sleep 99999
-        else
-          mantleNode --home /root/node2/.mantleNode init test2 --chain-id $$CHAIN_ID
-          mantleNode --home /root/node2/.mantleNode keys add test2 --keyring-backend test
+          mantleNode --home $$NODE_HOME init test2 --chain-id $$CHAIN_ID
+          mantleNode --home $$NODE_HOME keys add test2 --keyring-backend test
           sleep 10
           # adding persistent peers
-          sed -i 's/persistent_peers =.*/persistent_peers = "'$$(mantleNode --home /root/node1/.mantleNode tendermint show-node-id)@node1:26656,$$(mantleNode --home /root/node3/.mantleNode tendermint show-node-id)@node3:26656'"/g' /root/node2/.mantleNode/config/config.toml
-          cat /root/node2/.mantleNode/config/config.toml | grep persistent_peers
-          # sed -i "s/rpc_servers =.*/rpc_servers = "'"node1:26657,node1:26657"'"/g" /root/node2/.mantleNode/config/config.toml
-          # cat /root/node2/.mantleNode/config/config.toml | grep rpc_servers
+          sed -i 's/persistent_peers =.*/persistent_peers = "'$$(mantleNode --home /root/node1/.mantleNode tendermint show-node-id)@node1:26656,$$(mantleNode --home /root/node3/.mantleNode tendermint show-node-id)@node3:26656'"/g' $$NODE_HOME/config/config.toml
+          cat $$NODE_HOME/config/config.toml | grep persistent_peers
+          # sed -i "s/rpc_servers =.*/rpc_servers = "'"node1:26657,node1:26657"'"/g" $$NODE_HOME/config/config.toml
+          # cat $$NODE_HOME/config/config.toml | grep rpc_servers
           # copying genesis.json file from node1 to node2
-          cp /root/node1/.mantleNode/config/genesis.json /root/node2/.mantleNode/config/genesis.json
+          cp /root/node1/.mantleNode/config/genesis.json $$NODE_HOME/config/genesis.json
         fi
-        mantleNode --home /root/node2/.mantleNode start \
+        mantleNode --home $$NODE_HOME start \
         --rpc.laddr=tcp://0.0.0.0:26657 &
         # putting sleep for debugging purpose
         sleep 999999
 
   node3:
-    image: asguardnetwork/spacefolders:assetmantle-0.3.1
+    image: *node-image
     container_name: node3
     environment:
       - CHAIN_ID=load-test-1
-    volumes:
-      - chain-data1:/root/node1/.mantleNode
-      - chain-data2:/root/node2/.mantleNode
-      - chain-data3:/root/node3/.mantleNode
+      - NODE_HOME=/root/node3/.mantleNode
+    volumes: *node-volumes
     networks:
-      - cosmos
+      - horcrux-cosmos
     entrypoint: sh
     command:
       - -cex
       - |
-        if [[ -f /root/node3/.mantleNode/config/genesis.json ]];
+        if [[ ! -f $$NODE_HOME/config/genesis.json ]];
         then
-          mantleNode --home /root/node3/.mantleNode start \
-          --rpc.laddr=tcp://0.0.0.0:26657 &
-          sleep 99999
-        else
-          mantleNode --home /root/node3/.mantleNode init test3 --chain-id $$CHAIN_ID
-          mantleNode --home /root/node3/.mantleNode keys add test3 --keyring-backend test
+          mantleNode --home $$NODE_HOME init test3 --chain-id $$CHAIN_ID
+          mantleNode --home $$NODE_HOME keys add test3 --keyring-backend test
           sleep 10
           # adding persistent peers
-          sed -i 's/persistent_peers =.*/persistent_peers = "'$$(mantleNode --home /root/node1/.mantleNode tendermint show-node-id)@node1:26656,$$(mantleNode --home /root/node2/.mantleNode tendermint show-node-id)@node2:26656'"/g' /root/node3/.mantleNode/config/config.toml
-          cat /root/node3/.mantleNode/config/config.toml | grep persistent_peers
-          # sed -i "s/rpc_servers =.*/rpc_servers = "'"node1:26657,node1:26657"'"/g" /root/node3/.mantleNode/config/config.toml
-          # cat /root/node3/.mantleNode/config/config.toml | grep rpc_servers
+          sed -i 's/persistent_peers =.*/persistent_peers = "'$$(mantleNode --home /root/node1/.mantleNode tendermint show-node-id)@node1:26656,$$(mantleNode --home /root/node2/.mantleNode tendermint show-node-id)@node2:26656'"/g' $$NODE_HOME/config/config.toml
+          cat $$NODE_HOME/config/config.toml | grep persistent_peers
+          # sed -i "s/rpc_servers =.*/rpc_servers = "'"node1:26657,node1:26657"'"/g" $$NODE_HOME/config/config.toml
+          # cat $$NODE_HOME/config/config.toml | grep rpc_servers
           # copying genesis.json file from node1 to node3
-          cp /root/node1/.mantleNode/config/genesis.json /root/node3/.mantleNode/config/genesis.json
+          cp /root/node1/.mantleNode/config/genesis.json $$NODE_HOME/config/genesis.json
         fi
-        mantleNode --home /root/node3/.mantleNode start \
+        mantleNode --home $$NODE_HOME start \
         --rpc.laddr=tcp://0.0.0.0:26657 &
         # putting sleep for debugging purpose
         sleep 999999
 
   signer-init:
-    image: ghcr.io/strangelove-ventures/horcrux:main
+    image: &horcrux-image ghcr.io/strangelove-ventures/horcrux:main
     container_name: signer-init
     networks:
-      - cosmos
+      - horcrux-cosmos
     environment:
       - HORCRUX_HOME=/root/.horcrux_init
       - CHAIN_ID=load-test-1
@@ -129,7 +114,7 @@ services:
     command:
       - -cex
       - |
-        if [[ ! -e $$HORCRUX_HOME/config.yaml ]];
+        if [[ ! -f $$HORCRUX_HOME/config.yaml ]];
         then
           sleep 10
           # Create initial config
@@ -179,10 +164,11 @@ services:
         fi
 
   signer1:
-    image: ghcr.io/strangelove-ventures/horcrux:main
+    image: *horcrux-image
     container_name: signer1
+    restart: always
     networks:
-      - cosmos
+      - horcrux-cosmos
     volumes:
       - signer-data1:/root/.horcrux
     entrypoint: sh
@@ -190,18 +176,19 @@ services:
       - -cex
       - |
         sleep 150
-        if [[ -f /root/.horcrux/config.yaml ]];
+        if [[ ! -f /root/.horcrux/config.yaml ]];
         then
-          horcrux start
-        else
           echo "no config.yaml file found at /root/.horcrux"
+          exit 1
         fi
+        horcrux start
 
   signer2:
-    image: ghcr.io/strangelove-ventures/horcrux:main
+    image: *horcrux-image
     container_name: signer2
+    restart: always
     networks:
-      - cosmos
+      - horcrux-cosmos
     volumes:
       - signer-data2:/root/.horcrux
     entrypoint: sh
@@ -209,18 +196,19 @@ services:
       - -cex
       - |
         sleep 150
-        if [[ -f /root/.horcrux/config.yaml ]];
+        if [[ ! -f /root/.horcrux/config.yaml ]];
         then
-          horcrux start
-        else
           echo "no config.yaml file found at /root/.horcrux"
+          exit 1
         fi
+        horcrux start
 
   signer3:
-    image: ghcr.io/strangelove-ventures/horcrux:main
+    image: *horcrux-image
     container_name: signer3
+    restart: always
     networks:
-      - cosmos
+      - horcrux-cosmos
     volumes:
       - signer-data3:/root/.horcrux
     entrypoint: sh
@@ -228,12 +216,12 @@ services:
       - -cex
       - |
         sleep 150
-        if [[ -f /root/.horcrux/config.yaml ]];
+        if [[ ! -f /root/.horcrux/config.yaml ]];
         then
-          horcrux start
-        else
           echo "no config.yaml file found at /root/.horcrux"
+          exit 1
         fi
+        horcrux start
 
 volumes:
   chain-data1:
@@ -245,4 +233,4 @@ volumes:
   signer-data3:
 
 networks:
-  cosmos:
+  horcrux-cosmos:
