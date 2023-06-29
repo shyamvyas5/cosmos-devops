@@ -1,0 +1,124 @@
+---
+version: "3"
+services:
+  mantle-node-1:
+    image: asguardnetwork/spacefolders:assetmantle-v0.3.1
+    container_name: mantle-node-1
+    environment:
+      - MANTLE_CHAIN_ID=mantle-test-1
+    secrets:
+       - mantle_mnemonics
+    ports:
+      - 26657
+    networks:
+      - hermes-cosmos
+    volumes:
+      - mantle-node-1:/root/node1/.mantleNode
+    entrypoint: sh
+    command:
+      - -cex
+      - |
+        if [[ ! -f /root/node1/.mantleNode/config/genesis.json ]];
+        then
+          mantleNode --home /root/node1/.mantleNode init test --chain-id $$MANTLE_CHAIN_ID
+          cat /run/secrets/mantle_mnemonics | mantleNode --home /root/node1/.mantleNode keys add test --recover --keyring-backend test
+          mantleNode --home /root/node1/.mantleNode add-genesis-account test 10000000000000000000000stake --keyring-backend test
+          mantleNode --home /root/node1/.mantleNode gentx test 1000000000stake --keyring-backend test --chain-id $$MANTLE_CHAIN_ID
+          mantleNode --home /root/node1/.mantleNode collect-gentxs
+        fi
+        mantleNode --home /root/node1/.mantleNode start \
+        --rpc.laddr=tcp://0.0.0.0:26657 &
+        sleep 99999
+
+  gaia-node-1:
+    image: asguardnetwork/spacefolders:gaia-v10.0.1
+    container_name: gaia-node-1
+    ports:
+      - 26657
+    networks:
+      - hermes-cosmos
+    volumes:
+      - gaia-node-1:/root/node1/.gaia
+    environment:
+      - GAIA_CHAIN_ID=gaia-test-1
+    secrets:
+       - gaia_mnemonics
+    entrypoint: sh
+    command:
+      - -cex
+      - |
+        if [[ ! -f ~/node1/.gaia/config/genesis.json ]];
+        then
+          gaiad --home /root/node1/.gaia init test --chain-id $$GAIA_CHAIN_ID
+          cat /run/secrets/gaia_mnemonics | gaiad --home /root/node1/.gaia keys add test --recover --keyring-backend test
+          gaiad --home /root/node1/.gaia add-genesis-account test 10000000000000000000000stake --keyring-backend test
+          gaiad --home /root/node1/.gaia gentx test 1000000000stake --keyring-backend test --chain-id $$GAIA_CHAIN_ID
+          gaiad --home /root/node1/.gaia collect-gentxs
+        fi
+        gaiad --home /root/node1/.gaia start \
+        --rpc.laddr=tcp://0.0.0.0:26657 &
+        sleep 99999
+
+  hermes:
+    image: informalsystems/hermes:1.5.0
+    container_name: hermes
+    volumes:
+      - ./config.toml:/root/hermes_config/config.toml
+      - hermes_data:/root/.hermes
+    environment:
+      - GAIA_CHAIN_ID=gaia-test-1
+      - MANTLE_CHAIN_ID=mantle-test-1
+      - GAIA_NODE_DNS=gaia-node-1
+      - MANTLE_NODE_DNS=mantle-node-1
+      - GAIA_ACCOUNT_PREFIX=cosmos
+      - MANTLE_ACCOUNT_PREFIX=mantle
+    secrets:
+       - mantle_mnemonics
+       - gaia_mnemonics
+    user: root
+    networks:
+      - hermes-cosmos
+    entrypoint: ["/bin/bash"]
+    command:
+      - -cex
+      - |
+        apt-get update
+        apt-get install gettext-base
+
+        envsubst < $$HOME/hermes_config/config.toml > $$HOME/.hermes/config.toml
+
+        # adding key of gaia-test
+        hermes keys add --chain $$GAIA_CHAIN_ID --mnemonic-file /run/secrets/gaia_mnemonics
+
+        # adding key of mantle-test
+        hermes keys add --chain $$MANTLE_CHAIN_ID --mnemonic-file /run/secrets/mantle_mnemonics
+
+        # putting sleep here to wait for the chain nodes getting started
+        sleep 10
+
+        # creating client
+        hermes create client --host-chain $$MANTLE_CHAIN_ID --reference-chain $$GAIA_CHAIN_ID;
+        hermes create client --host-chain $$GAIA_CHAIN_ID --reference-chain $$MANTLE_CHAIN_ID;
+
+        # creating connection
+        hermes create connection --a-chain $$GAIA_CHAIN_ID --a-client 07-tendermint-0 --b-client 07-tendermint-0;
+
+        # creating channel
+        hermes create channel --a-chain $$GAIA_CHAIN_ID --a-connection connection-0 --a-port transfer --b-port transfer;
+
+        # starting relayer
+        hermes start;
+
+secrets:
+  mantle_mnemonics:
+    file: mantle_mnemonics.txt
+  gaia_mnemonics:
+    file: gaia_mnemonics.txt
+
+volumes:
+  gaia-node-1:
+  mantle-node-1:
+  hermes_data:
+
+networks:
+  hermes-cosmos:
