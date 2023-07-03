@@ -55,13 +55,13 @@ slack:
 chains:
 
   # The user-friendly name that will be used for labels. Highly suggest wrapping in quotes.
-  "assetmantle":
+  "gaia":
     # chain_id is validated for a match when connecting to an RPC endpoint, also used as a label in several places.
     chain_id: load-test-1
     # Hooray, in v2 we derive the valcons from abci queries so you don't have to jump through hoops to figure out how
     # to convert ed25519 keys to the appropriate bech32 address.
     # Use valcons address if using ICS
-    valoper_address: mantlevalcons152quk3j64x7shmqsrs0ssuevwd85hu6pxm3vfw
+    valoper_address: cosmosvalcons1ayfcy6ltsrr44ddw3mkg9genng7q959m8gqmeh
     # Should the monitor revert to using public API endpoints if all supplied RCP nodes fail?
     # This isn't always reliable, not all public nodes have websocket proxying setup correctly.
     public_fallback: no

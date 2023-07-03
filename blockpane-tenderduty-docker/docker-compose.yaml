@@ -2,34 +2,30 @@ version: '3.2'
 
 services:
   node1:
-    image: asguardnetwork/spacefolders:assetmantle-v0.3.1
+    image: asguardnetwork/spacefolders:gaia-v10.0.1
     container_name: node1
     environment:
       - CHAIN_ID=load-test-1
-    networks:
-      - cosmos
+      - NODE1_HOME=/root/node1/.gaia
+    networks: &node-network
+      - tenderduty-cosmos
     ports:
       - 26657
     volumes:
-      - node1:/root/node1/.mantleNode
+      - node1:/root/node1/.gaia
     entrypoint: sh
     command:
       - -cex
       - |
-        if [[ -f /root/node1/.mantleNode/config/genesis.json ]];
+        if [[ -f $$NODE1_HOME/config/genesis.json ]];
         then
-          mantleNode --home /root/node1/.mantleNode start \
-          --rpc.laddr=tcp://0.0.0.0:26657 &
-          sleep 99999
-        else
-          mantleNode --home /root/node1/.mantleNode init test --chain-id $$CHAIN_ID
-          mantleNode --home /root/node1/.mantleNode keys add test --keyring-backend test
-          mantleNode --home /root/node1/.mantleNode add-genesis-account test 10000000000000000000000stake --keyring-backend test
-          mantleNode --home /root/node1/.mantleNode gentx test 1000000000stake --keyring-backend test --chain-id $$CHAIN_ID
-          mantleNode --home /root/node1/.mantleNode collect-gentxs
+          gaiad --home $$NODE1_HOME init test --chain-id $$CHAIN_ID
+          gaiad --home $$NODE1_HOME keys add test --keyring-backend test
+          gaiad --home $$NODE1_HOME add-genesis-account test 10000000000000000000000stake --keyring-backend test
+          gaiad --home $$NODE1_HOME gentx test 1000000000stake --keyring-backend test --chain-id $$CHAIN_ID
+          gaiad --home $$NODE1_HOME collect-gentxs
         fi
-        mantleNode --home /root/node1/.mantleNode start \
-        --rpc.laddr=tcp://0.0.0.0:26657 &
+        gaiad --home $$NODE1_HOME start --rpc.laddr=tcp://0.0.0.0:26657 &
         # putting sleep for debugging purpose
         sleep 99999
 
@@ -37,8 +33,7 @@ services:
     image: ghcr.io/blockpane/tenderduty:v2.2.1
     container_name: tenderduty
     command: ""
-    networks:
-      - cosmos
+    networks: *node-network
     ports:
       - "8888:8888" # Dashboard
       - "28686:28686" # Prometheus exporter
@@ -57,4 +52,4 @@ volumes:
   tenderduty_home:
 
 networks:
-  cosmos:
+  tenderduty-cosmos:
