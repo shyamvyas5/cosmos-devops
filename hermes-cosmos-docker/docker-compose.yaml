@@ -11,7 +11,7 @@ services:
        - mantle_mnemonics
     ports:
       - 26657
-    networks:
+    networks: &node-network
       - hermes-cosmos
     volumes:
       - mantle-node-1:/root/node1/.mantleNode
@@ -29,6 +29,7 @@ services:
         fi
         mantleNode --home $$NODE_HOME start \
           --rpc.laddr=tcp://0.0.0.0:26657 &
+        # putting sleep for debuggin purpose
         sleep 99999
 
   gaia-node-1:
@@ -36,8 +37,7 @@ services:
     container_name: gaia-node-1
     ports:
       - 26657
-    networks:
-      - hermes-cosmos
+    networks: *node-network
     volumes:
       - gaia-node-1:/root/node1/.gaia
       - NODE_HOME=/root/node1/.gaia
@@ -59,6 +59,7 @@ services:
         fi
         gaiad --home $$NODE_HOME start \
           --rpc.laddr=tcp://0.0.0.0:26657 &
+        # putting sleep for debugging purpose
         sleep 99999
 
   hermes:
@@ -78,8 +79,7 @@ services:
        - mantle_mnemonics
        - gaia_mnemonics
     user: root
-    networks:
-      - hermes-cosmos
+    networks: *node-network
     entrypoint: ["/bin/bash"]
     command:
       - -cex
