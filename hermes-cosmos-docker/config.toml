@@ -1,0 +1,56 @@
+[global]
+log_level = 'debug'
+
+[mode]
+
+[mode.clients]
+enabled = true
+refresh = true
+misbehaviour = false
+
+[mode.connections]
+enabled = false
+
+[mode.channels]
+enabled = false
+
+[mode.packets]
+enabled = true
+clear_interval = 100
+clear_on_start = true
+tx_confirmation = true
+
+[telemetry]
+enabled = true
+host = '127.0.0.1'
+port = 3001
+
+[[chains]]
+id = '$GAIA_CHAIN_ID'
+rpc_addr = 'http://$GAIA_NODE_DNS:26657'
+grpc_addr = 'http://$GAIA_NODE_DNS:9090'
+websocket_addr = 'ws://$GAIA_NODE_DNS:26657/websocket'
+rpc_timeout = '15s'
+account_prefix = '$GAIA_ACCOUNT_PREFIX'
+key_name = 'test'
+store_prefix = 'ibc'
+gas_price = { price = 0.01, denom = 'stake' }
+max_gas = 10000000
+clock_drift = '5s'
+trusting_period = '14days'
+trust_threshold = { numerator = '1', denominator = '3' }
+
+[[chains]]
+id = '$MANTLE_CHAIN_ID'
+rpc_addr = 'http://$MANTLE_NODE_DNS:26657'
+grpc_addr = 'http://$MANTLE_NODE_DNS:9090'
+websocket_addr = 'ws://$MANTLE_NODE_DNS:26657/websocket'
+rpc_timeout = '15s'
+account_prefix = '$MANTLE_ACCOUNT_PREFIX'
+key_name = 'test'
+store_prefix = 'ibc'
+gas_price = { price = 0.01, denom = 'stake' }
+max_gas = 10000000
+clock_drift = '5s'
+trusting_period = '14days'
+trust_threshold = { numerator = '1', denominator = '3' }
