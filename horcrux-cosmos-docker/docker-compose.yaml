@@ -141,13 +141,13 @@ services:
           cp -r $$HORCRUX_HOME/* $$SIGNER3_HOME
 
           # Copy shard json and rsa keys json to node1 volume
-          cp /root/cosigner_1/* $$SIGNER1_HOME
+          cp $$COSIGNER1_HOME/* $$SIGNER1_HOME
 
           # Copy shard json and rsa keys json to node2 volume
-          cp /root/cosigner_2/* $$SIGNER2_HOME
+          cp $$COSIGNER2_HOME/* $$SIGNER2_HOME
 
           # Copy shard json and rsa keys json to node3 volume
-          cp /root/cosigner_3/* $$SIGNER3_HOME
+          cp $$COSIGNER3_HOME/* $$SIGNER3_HOME
 
           # Update the validation address to a new port on node1, node2 and node3
           sed -i 's%priv_validator_laddr =.*%priv_validator_laddr = "tcp://0.0.0.0:26660"%g' $$NODE1_HOME/config/config.toml
