@@ -182,6 +182,13 @@ services:
           echo "no config.yaml file found at $$HORCRUX_HOME"
           exit 1
         fi
+
+        # if process id exists than delete it
+        if [[ -f $$HORCRUX_HOME/horcrux.pid ]];
+        then
+          rm $$HORCRUX_HOME/horcrux.pid
+        fi
+
         horcrux start
 
   signer2:
@@ -202,6 +209,13 @@ services:
           echo "no config.yaml file found at $$HORCRUX_HOME"
           exit 1
         fi
+
+        # if process id exists than delete it
+        if [[ -f $$HORCRUX_HOME/horcrux.pid ]];
+        then
+          rm $$HORCRUX_HOME/horcrux.pid
+        fi
+
         horcrux start
 
   signer3:
@@ -223,6 +237,13 @@ services:
           echo "no config.yaml file found at $$HORCRUX_HOME"
           exit 1
         fi
+
+        # if process id exists than delete it
+        if [[ -f $$HORCRUX_HOME/horcrux.pid ]];
+        then
+          rm $$HORCRUX_HOME/horcrux.pid
+        fi
+
         horcrux start
 
 volumes:
