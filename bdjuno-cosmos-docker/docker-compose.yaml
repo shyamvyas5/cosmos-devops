@@ -58,6 +58,8 @@ services:
       - -cex
       - |
         sleep 10
+        wget -qO- https://github.com/aybabtme/semaphore/releases/download/0.1.0/semaphore_0.1.0_linux_amd64.tar.gz | tar -xvzf -
+        mv semaphore /usr/bin/semaphore
         /root/node1/scripts/run.sh
 
   bdjuno_migration:
