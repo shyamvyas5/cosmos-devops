@@ -17,7 +17,7 @@ services:
     command:
       - -cex
       - |
-        if [[ -f $$NODE1_HOME/config/genesis.json ]];
+        if [[ ! -f $$NODE1_HOME/config/genesis.json ]];
         then
           gaiad --home $$NODE1_HOME init test --chain-id $$CHAIN_ID
           gaiad --home $$NODE1_HOME keys add test --keyring-backend test

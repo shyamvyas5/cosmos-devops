@@ -1,0 +1,193 @@
+---
+version: '3.7'
+
+services:
+  postgres:
+    image: postgres:13.5
+    container_name: postgres
+    environment:
+      POSTGRES_USER: bdjuno
+      POSTGRES_PASSWORD: bdjuno
+      POSTGRES_DB: bdjuno
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:rw
+    networks: &node-network
+      - bdjuno-cosmos
+
+  node1:
+    image: asguardnetwork/spacefolders:gaia-v10.0.1
+    container_name: node1
+    environment:
+      - CHAIN_ID=load-test-1
+      - NODE1_HOME=/root/node1/.gaia
+    networks: *node-network
+    ports:
+      - 26657
+    volumes:
+      - node1:/root/node1/.gaia
+    entrypoint: sh
+    command:
+      - -cex
+      - |
+        if [[ ! -f $$NODE1_HOME/config/genesis.json ]];
+        then
+          gaiad --home $$NODE1_HOME init test --chain-id $$CHAIN_ID
+          gaiad --home $$NODE1_HOME keys add test --keyring-backend test
+          gaiad --home $$NODE1_HOME add-genesis-account test 10000000000000000000000stake --keyring-backend test
+          gaiad --home $$NODE1_HOME gentx test 1000000000stake --keyring-backend test --chain-id $$CHAIN_ID
+          gaiad --home $$NODE1_HOME collect-gentxs
+        fi
+        gaiad --home $$NODE1_HOME start --rpc.laddr=tcp://0.0.0.0:26657 &
+        # putting sleep for debugging purpose
+        sleep 99999
+
+  generate_transactions:
+    image: asguardnetwork/spacefolders:gaia-v10.0.1
+    container_name: generate_transactions
+    environment:
+      - CHAIN_ID=load-test-1
+      - NODE1_HOME=/root/node1/.gaia
+    networks: *node-network
+    volumes:
+      - node1:/root/node1/.gaia
+      - ./scripts:/root/node1/scripts
+    entrypoint: sh
+    command:
+      - -cex
+      - |
+        sleep 10
+        /root/node1/scripts/run.sh
+
+  bdjuno_migration:
+    image: local/bdjuno:v4.0.0
+    container_name: bdjuno_migration
+    # restart: always
+    networks: *node-network
+    entrypoint: sh
+    command:
+      - -cex
+      - |
+        apk update && apk add postgresql-client;
+
+        export PGPASSWORD=bdjuno;
+
+        # Create database if it doesn't exist
+        psql -U bdjuno -h postgres -c "CREATE DATABASE hasura;" || true
+
+        # Check if the user exists
+        # psql -U bdjuno -h postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname=hasura" | grep -q 1
+
+        # Create user for hasura
+        psql -U bdjuno -h postgres -c "CREATE USER hasura WITH PASSWORD 'hasura';" || true
+
+        # Grant privileges of hasura user to hasura database
+        psql -U bdjuno -h postgres -c "GRANT ALL PRIVILEGES ON DATABASE hasura TO hasura;" || true
+
+        mkdir /bdjuno/bdjuno_schemas && cd /bdjuno/bdjuno_schemas;
+        git init;
+        git remote add -f origin https://github.com/forbole/bdjuno;
+        git config core.sparseCheckout true;
+        echo "database/schema/" >> .git/info/sparse-checkout;
+        git pull origin cosmos/v0.47.x;
+        # putting sleep for database to get started
+        sleep 10
+        psql -U bdjuno -a -h postgres -d bdjuno -f database/schema/00-cosmos.sql || true
+        psql -U bdjuno -a -h postgres -d bdjuno -f database/schema/01-auth.sql || true
+        psql -U bdjuno -a -h postgres -d bdjuno -f database/schema/02-bank.sql || true
+        psql -U bdjuno -a -h postgres -d bdjuno -f database/schema/03-staking.sql || true
+        psql -U bdjuno -a -h postgres -d bdjuno -f database/schema/04-consensus.sql || true
+        psql -U bdjuno -a -h postgres -d bdjuno -f database/schema/05-mint.sql || true
+        psql -U bdjuno -a -h postgres -d bdjuno -f database/schema/06-distribution.sql || true
+        psql -U bdjuno -a -h postgres -d bdjuno -f database/schema/07-pricefeed.sql || true
+        psql -U bdjuno -a -h postgres -d bdjuno -f database/schema/08-gov.sql || true
+        psql -U bdjuno -a -h postgres -d bdjuno -f database/schema/09-modules.sql || true
+        psql -U bdjuno -a -h postgres -d bdjuno -f database/schema/10-slashing.sql || true
+        psql -U bdjuno -a -h postgres -d bdjuno -f database/schema/11-feegrant.sql || true
+        psql -U bdjuno -a -h postgres -d bdjuno -f database/schema/12-upgrade.sql || true
+
+  bdjuno:
+    image: local/bdjuno:v4.0.0
+    container_name: bdjuno
+    # restart: always
+    networks: *node-network
+    environment:
+      - BDJUNO_HOME=/root/.bdjuno
+      - NODE1_HOME=/root/node1/.gaia
+    volumes:
+      - ./config.yaml:/root/.bdjuno/config.yaml
+      - node1:/root/node1/.gaia
+    entrypoint: sh
+    command:
+      - -cex
+      - |
+        # putting sleep so genesis.json file gets created and chain gets started
+        sleep 30
+
+        # if config.yaml doesn't exist, create the config file by running init
+        if [[ ! -f $$BDJUNO_HOME/config.yaml ]];
+        then
+          bdjuno init
+          # parsing the genesis file
+          bdjuno parse genesis-file --genesis-file-path $$NODE1_HOME/config/genesis.json
+        fi
+
+        # start indexer
+        bdjuno start
+
+  bdjuno_metadata:
+    image: ubuntu:22.04
+    container_name: bdjuno_metadata
+    restart: on-failure
+    networks: *node-network
+    entrypoint: bash
+    command:
+      - -cex
+      - |
+        apt-get update;
+        apt-get install curl git -y;
+        curl -L https://github.com/hasura/graphql-engine/raw/stable/cli/get.sh | VERSION=v2.29.0 bash;
+        git init;
+        git remote add -f origin https://github.com/forbole/bdjuno;
+        git config core.sparseCheckout true;
+        echo "hasura/" >> .git/info/sparse-checkout;
+        git pull origin cosmos/v0.47.x;
+        cd hasura;
+        sleep 10;
+        hasura metadata apply --endpoint http://hasura:8080 --admin-secret hasurahasura || true
+        hasura --endpoint http://hasura:8080 --admin-secret hasurahasura metadata ic list;
+
+  hasura:
+    image: hasura/graphql-engine:v2.29.0
+    container_name: hasura
+    ports:
+      - 8080:8080
+    restart: on-failure
+    networks: *node-network
+    depends_on:
+      - postgres
+    environment:
+      # HASURA_GRAPHQL_DATABASE_URL: postgres://hasura:hasura@postgres:5432/hasura
+      HASURA_GRAPHQL_DATABASE_URL: postgres://bdjuno:bdjuno@postgres:5432/bdjuno
+      ## postgres database to store Hasura metadata
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://hasura:hasura@postgres:5432/hasura
+      ## this env var can be used to add the above postgres database to Hasura as a data source. this can be removed/updated based on your needs
+      PG_DATABASE_URL: postgres://hasura:hasura@postgres:5432/hasura
+      ## enable the console served by server
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
+      ## enable debugging mode. It is recommended to disable this in production
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      HASURA_GRAPHQL_UNAUTHORIZED_ROLE: anonymous
+      ACTION_BASE_URL: "http://0.0.0.0:3000"
+      ## uncomment next line to set an admin secret
+      HASURA_GRAPHQL_ADMIN_SECRET: hasurahasura
+
+
+volumes:
+  postgres_data:
+  node1:
+
+networks:
+  bdjuno-cosmos:
