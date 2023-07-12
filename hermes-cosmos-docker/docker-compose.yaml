@@ -22,14 +22,16 @@ services:
         if [[ ! -f $$NODE_HOME/config/genesis.json ]];
         then
           mantleNode --home $$NODE_HOME init test --chain-id $$MANTLE_CHAIN_ID
+          # replace denom "stake" with "mntl" in genesis.json
+          sed -i 's/stake/mntl/g' $$NODE_HOME/config/genesis.json
           cat /run/secrets/mantle_mnemonics | mantleNode --home $$NODE_HOME keys add test --recover --keyring-backend test
-          mantleNode --home $$NODE_HOME add-genesis-account test 10000000000000000000000stake --keyring-backend test
-          mantleNode --home $$NODE_HOME gentx test 1000000000stake --keyring-backend test --chain-id $$MANTLE_CHAIN_ID
+          mantleNode --home $$NODE_HOME add-genesis-account test 10000000000000000000000mntl --keyring-backend test
+          mantleNode --home $$NODE_HOME gentx test 1000000000mntl --keyring-backend test --chain-id $$MANTLE_CHAIN_ID
           mantleNode --home $$NODE_HOME collect-gentxs
         fi
         mantleNode --home $$NODE_HOME start \
           --rpc.laddr=tcp://0.0.0.0:26657 &
-        # putting sleep for debuggin purpose
+        # putting sleep for debugging purpose
         sleep 99999
 
   gaia-node-1:
@@ -40,9 +42,9 @@ services:
     networks: *node-network
     volumes:
       - gaia-node-1:/root/node1/.gaia
-      - NODE_HOME=/root/node1/.gaia
     environment:
       - GAIA_CHAIN_ID=gaia-test-1
+      - NODE_HOME=/root/node1/.gaia
     secrets:
        - gaia_mnemonics
     entrypoint: sh
@@ -52,9 +54,11 @@ services:
         if [[ ! -f $$NODE_HOME/config/genesis.json ]];
         then
           gaiad --home $$NODE_HOME init test --chain-id $$GAIA_CHAIN_ID
+          # replace denom "stake" with "atom" in genesis.json
+          sed -i 's/stake/atom/g' $$NODE_HOME/config/genesis.json
           cat /run/secrets/gaia_mnemonics | gaiad --home $$NODE_HOME keys add test --recover --keyring-backend test
-          gaiad --home $$NODE_HOME add-genesis-account test 10000000000000000000000stake --keyring-backend test
-          gaiad --home $$NODE_HOME gentx test 1000000000stake --keyring-backend test --chain-id $$GAIA_CHAIN_ID
+          gaiad --home $$NODE_HOME add-genesis-account test 10000000000000000000000atom --keyring-backend test
+          gaiad --home $$NODE_HOME gentx test 1000000000atom --keyring-backend test --chain-id $$GAIA_CHAIN_ID
           gaiad --home $$NODE_HOME collect-gentxs
         fi
         gaiad --home $$NODE_HOME start \

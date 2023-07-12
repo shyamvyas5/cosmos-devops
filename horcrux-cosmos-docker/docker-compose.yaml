@@ -24,9 +24,11 @@ services:
         if [[ ! -f $$NODE1_HOME/config/genesis.json ]];
         then
           gaiad --home $$NODE1_HOME init test --chain-id $$CHAIN_ID
+          # replace denom "stake" with "atom" in genesis.json
+          sed -i 's/stake/atom/g' $$NODE1_HOME/config/genesis.json
           gaiad --home $$NODE1_HOME keys add test --keyring-backend test
-          gaiad --home $$NODE1_HOME add-genesis-account test 10000000000000000000000stake --keyring-backend test
-          gaiad --home $$NODE1_HOME gentx test 1000000000stake --keyring-backend test --chain-id $$CHAIN_ID
+          gaiad --home $$NODE1_HOME add-genesis-account test 10000000000000000000000atom --keyring-backend test
+          gaiad --home $$NODE1_HOME gentx test 1000000000atom --keyring-backend test --chain-id $$CHAIN_ID
           gaiad --home $$NODE1_HOME collect-gentxs
         fi
         gaiad --home $$NODE1_HOME start --rpc.laddr=tcp://0.0.0.0:26657 &
@@ -116,7 +118,7 @@ services:
       - |
         if [[ ! -f $$HORCRUX_HOME/config.yaml ]];
         then
-          sleep 10
+          sleep 20
           # Create initial config
           horcrux --home $$HORCRUX_HOME config init --node "tcp://node1:26660" --node "tcp://node2:26660" --node "tcp://node3:26660" --cosigner "tcp://signer1:2222" --cosigner "tcp://signer2:2222" --cosigner "tcp://signer3:2222" --threshold 2 --grpc-timeout 1000ms --raft-timeout 1000ms
 
