@@ -61,7 +61,7 @@ services:
         /root/node1/scripts/run.sh
 
   bdjuno_migration:
-    image: local/bdjuno:v4.0.0
+    image: shyamsv/bdjuno:v4.0.0-alpine
     container_name: bdjuno_migration
     # restart: always
     networks: *node-network
@@ -108,7 +108,7 @@ services:
         psql -U bdjuno -a -h postgres -d bdjuno -f database/schema/12-upgrade.sql || true
 
   bdjuno:
-    image: local/bdjuno:v4.0.0
+    image: shyamsv/bdjuno:v4.0.0-alpine
     container_name: bdjuno
     # restart: always
     networks: *node-network

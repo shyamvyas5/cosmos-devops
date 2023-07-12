@@ -10,7 +10,7 @@ services:
     secrets:
        - mantle_mnemonics
     ports:
-      - 26657
+      - 26658:26657
     networks: &node-network
       - hermes-cosmos
     volumes:
@@ -36,7 +36,7 @@ services:
     image: asguardnetwork/spacefolders:gaia-v10.0.1
     container_name: gaia-node-1
     ports:
-      - 26657
+      - 26657:26657
     networks: *node-network
     volumes:
       - gaia-node-1:/root/node1/.gaia
