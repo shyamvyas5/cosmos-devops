@@ -34,7 +34,7 @@ rpc_timeout = '15s'
 account_prefix = '$GAIA_ACCOUNT_PREFIX'
 key_name = 'test'
 store_prefix = 'ibc'
-gas_price = { price = 0.01, denom = 'stake' }
+gas_price = { price = 0.01, denom = 'atom' }
 max_gas = 10000000
 clock_drift = '5s'
 trusting_period = '14days'
@@ -49,7 +49,7 @@ rpc_timeout = '15s'
 account_prefix = '$MANTLE_ACCOUNT_PREFIX'
 key_name = 'test'
 store_prefix = 'ibc'
-gas_price = { price = 0.01, denom = 'stake' }
+gas_price = { price = 0.01, denom = 'mntl' }
 max_gas = 10000000
 clock_drift = '5s'
 trusting_period = '14days'

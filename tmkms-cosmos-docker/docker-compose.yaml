@@ -25,9 +25,11 @@ services:
         if [[ ! -f $$NODE1_HOME/config/genesis.json ]];
         then
           gaiad --home $$NODE1_HOME init test --chain-id $$CHAIN_ID
+          # replace denom "stake" with "atom" in genesis.json
+          sed -i 's/stake/atom/g' $$NODE1_HOME/config/genesis.json
           gaiad --home $$NODE1_HOME keys add test --keyring-backend test
-          gaiad --home $$NODE1_HOME add-genesis-account test 10000000000000000000000stake --keyring-backend test
-          gaiad --home $$NODE1_HOME gentx test 1000000000stake --keyring-backend test --chain-id $$CHAIN_ID
+          gaiad --home $$NODE1_HOME add-genesis-account test 10000000000000000000000atom --keyring-backend test
+          gaiad --home $$NODE1_HOME gentx test 1000000000atom --keyring-backend test --chain-id $$CHAIN_ID
           gaiad --home $$NODE1_HOME collect-gentxs
           sed -i 's%priv_validator_laddr =.*%priv_validator_laddr = "tcp://0.0.0.0:26658"%g' $$NODE1_HOME/config/config.toml
           sed -i '/^priv_validator_key_file =.*/ s/./#&/' $$NODE1_HOME/config/config.toml
