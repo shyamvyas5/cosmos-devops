@@ -103,17 +103,17 @@ services:
         sleep 10
 
         # creating client
-        hermes create client --host-chain $$MANTLE_CHAIN_ID --reference-chain $$GAIA_CHAIN_ID;
-        hermes create client --host-chain $$GAIA_CHAIN_ID --reference-chain $$MANTLE_CHAIN_ID;
+        hermes create client --host-chain $$MANTLE_CHAIN_ID --reference-chain $$GAIA_CHAIN_ID
+        hermes create client --host-chain $$GAIA_CHAIN_ID --reference-chain $$MANTLE_CHAIN_ID
 
         # creating connection
-        hermes create connection --a-chain $$GAIA_CHAIN_ID --a-client 07-tendermint-0 --b-client 07-tendermint-0;
+        hermes create connection --a-chain $$GAIA_CHAIN_ID --a-client 07-tendermint-0 --b-client 07-tendermint-0
 
         # creating channel
-        hermes create channel --a-chain $$GAIA_CHAIN_ID --a-connection connection-0 --a-port transfer --b-port transfer;
+        hermes create channel --a-chain $$GAIA_CHAIN_ID --a-connection connection-0 --a-port transfer --b-port transfer
 
         # starting relayer
-        hermes start;
+        hermes start
 
 secrets:
   mantle_mnemonics:

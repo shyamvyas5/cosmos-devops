@@ -1,8 +1,8 @@
-# Cosmos-Devops
+# Cosmos-DevOps
 
-This repository is a collection of my learnings as I'm exploring web3 and the Cosmos chain. I'm new to this space, so I'm starting with the basics and will be adding my progress, code samples, and experiments in this repository as I learn.
+This repository is a collection of my cosmos DevOps journey. I'll be putting my progress, code samples, and experiments in this repository.
 
-## Docker Compose Setups
+## Setups
 
 - [Bdjuno Indexer with Gaia chain](./bdjuno-cosmos-docker/README.md): Deploys a blockchain explorer using Docker Compose, which allows for visualization and analysis of blockchain data and other services are setup like Postgres in which bdjuno stores data, hasura graphql, running migrations and updating metadata, etc.
 
@@ -10,9 +10,9 @@ This repository is a collection of my learnings as I'm exploring web3 and the Co
 
 - [Hermes Relayer Gaia-Mantle Chain](./hermes-cosmos-docker/README.md): Creates an IBC relayer across Mantle chain and Gaia chain.
 
-- [Horcrux MPC signer with Gaia chain](./horcrux-cosmos-docker/README.md): Sets up 3 Gaia chain nodes, 3 Horcrux signers for multi-signer functionality in docker compose file.
+- [Horcrux MPC signer with Gaia chain](./horcrux-cosmos-docker/README.md): Sets up Horcrux cluster in docker compose file.
 
-- [TMKMS signer with Gaia chain](./tmkms-cosmos-docker/README.md): Sets up Gaia chain nodes, TMKMS signers for multi-signature functionality in docker compose file.
+- [TMKMS signer with Gaia chain](./tmkms-cosmos-docker/README.md): Sets up TMKMS signers for multi-signature functionality in docker compose file.
 
 Each scenario directory contains a detailed README file that provides instructions on how to set up and use the Docker Compose configuration for that specific scenario.
 
